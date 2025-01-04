@@ -19,7 +19,7 @@ wget http://people.csail.mit.edu/ingraham/graph-protein-design/data/cath/chain_s
 
 - Some resulting generations:
 
-![generation1](images/protein_1.png)
-![generation2](images/protein_2.png)
-![generation3](images/protein_3.png)
-![generation4](images/protein_4.png)
+![generation1](images/protein_1.PNG)
+![generation2](images/protein_2.PNG)
+![generation3](images/protein_3.PNG)
+![generation4](images/protein_4.PNG)
