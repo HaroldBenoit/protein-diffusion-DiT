@@ -17,6 +17,9 @@ wget http://people.csail.mit.edu/ingraham/graph-protein-design/data/cath/chain_s
     - Diffusion code inspired by https://github.com/pabloppp/pytorch-tools/blob/master/torchtools/utils/diffusion.py and https://github.com/dome272/Wuerstchen/tree/main
 
 
+- Some takeaways/notes:
+    - Don't forget to normalize the protein coordinates before adding unit gaussian noise, otherwise the scales may be wrong.
+
 - Some resulting generations:
 
 ![generation1](images/protein_1.PNG)
