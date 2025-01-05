@@ -25,7 +25,7 @@ import itertools
 from collections import defaultdict
 from typing import List, Dict, Any
 
-from data import load_data, transform_data, ProteinStructureDataset
+from data import load_data, transform_data, ProteinStructureDataset, get_data_loader, get_data_normalization
 
 
 @dataclasses.dataclass
@@ -137,23 +137,8 @@ def get_model(train_cfg, arch_config, device):
     return model
 
 
-## DATALOADER
-def get_data_loader(data_cfg, df, split="train", shuffle=True):
-    dataset = ProteinStructureDataset(df[df.split == split],
-                                    max_seq_length=data_cfg.seq_len)
 
-    g = torch.Generator()
-    g.manual_seed(data_cfg.seed)
-
-    data_loader = torch.utils.data.DataLoader(dataset,
-                                            batch_size=data_cfg.batch_size, num_workers=data_cfg.num_workers, generator=g, shuffle=shuffle)
-    
-    return data_loader
-
-
-
-
-def eval(model, diffuzz, val_iter, device, _float16_dtype, max_val_iter=10):
+def eval(model, diffuzz, val_iter, device, _float16_dtype, data_normalization, max_val_iter=10):
 
 
     pbar = tqdm(range(max_val_iter))
@@ -170,6 +155,9 @@ def eval(model, diffuzz, val_iter, device, _float16_dtype, max_val_iter=10):
         atom_mask= batch["atom_mask"].to(device)
         batch_size = atom_mask.shape[0]
         
+
+        batch["atom_positions"] = (batch["atom_positions"] - data_normalization["validation"]["mean"])/data_normalization["validation"]["std"]
+
 
         with torch.no_grad():
     
@@ -217,11 +205,15 @@ def train(arch_config, data_cfg, train_cfg, df):
     np.random.seed(train_cfg.seed)
     torch.manual_seed(train_cfg.seed)
 
+    data_normalization = get_data_normalization(data_cfg)
+
 
     _float16_dtype = torch.float16 if not is_torch_bf16_gpu_available() else torch.bfloat16
     if is_torch_tf32_available():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+
+
 
 
     model = DiT(arch_config)
@@ -302,6 +294,9 @@ def train(arch_config, data_cfg, train_cfg, df):
         atom_mask= batch["atom_mask"].to(device)
 
 
+        batch["atom_positions"] = (batch["atom_positions"] - data_normalization["train"]["mean"])/data_normalization["train"]["std"]
+
+
         ## forward diffusion
         with torch.no_grad():
             input = einops.rearrange(batch["atom_positions"], "batch seq_len num_atoms coord -> batch seq_len (num_atoms coord)").to(device)
@@ -376,7 +371,7 @@ def train(arch_config, data_cfg, train_cfg, df):
             model.eval()
             print("Evaluating....")
             with torch.no_grad():
-                logs= eval(model,diffuzz, val_iter, device, _float16_dtype, max_val_iter=train_cfg.max_val_iter)
+                logs= eval(model,diffuzz, val_iter, device, _float16_dtype, data_normalization, max_val_iter=train_cfg.max_val_iter)
             logs["train/total_steps"] = scheduler.last_epoch
             model.train()
             wandb.log(logs)

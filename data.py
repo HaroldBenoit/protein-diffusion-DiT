@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 import dataclasses
 import einops
-
+import os
+from train import get_data_loader, DataLoaderConfig
 
 
 def load_data():
@@ -186,4 +187,71 @@ def transform_data(batch, data_cfg):
 
 
   return {"atom_positions": atom_positions,  "attn_masks": attn_masks, "atom_mask": atom_mask, "residue_index": batch["residue_index"], "num_res": batch["num_res"]}
+
+
+
+## DATALOADER
+def get_data_loader(data_cfg, df, split="train", shuffle=True):
+    dataset = ProteinStructureDataset(df[df.split == split],
+                                    max_seq_length=data_cfg.seq_len)
+
+    g = torch.Generator()
+    g.manual_seed(data_cfg.seed)
+
+    data_loader = torch.utils.data.DataLoader(dataset,
+                                            batch_size=data_cfg.batch_size, num_workers=data_cfg.num_workers, generator=g, shuffle=shuffle)
+    
+    return data_loader
+
+
+
+def get_data_normalization(data_cfg):
+
+
+  df = load_data()
+
+  file_path = "data_normalization.pt"
+
+  if not os.path.exists(file_path):
+
+    data_size={"train":18024, "validation":608}
+
+    data_cfg = DataLoaderConfig()
+
+    data_normalization={}
+
+
+    for split in ["train", "validation"]:
+      data_cfg = DataLoaderConfig()
+
+      data_cfg.batch_size=data_size[split]
+
+
+      loader = get_data_loader(data_cfg, df, split=split, shuffle=False)
+
+      batch = next(iter(loader))
+
+      batch = transform_data(batch, data_cfg)
+      atom_positions = batch["atom_positions"]
+
+      #input = einops.rearrange(batch["atom_positions"], "batch seq_len num_atoms coord -> batch seq_len (num_atoms coord)")
+
+      means = einops.reduce(atom_positions, "batch seq_len num_atoms coord  -> num_atoms coord ", reduction="mean")
+
+      #means= einops.reduce(means, "(atom_type coord) -> atom_type coord")
+
+      stds = torch.sqrt(einops.reduce((atom_positions - means)**2, "batch seq_len num_atoms coord  -> num_atoms coord ", reduction="mean"))
+
+      print(means, stds)
+
+      data_normalization[split] = {"mean":means, "std": stds}
+
+      # for backbone_atom in range(4):
+
+    torch.save(data_normalization, file_path)
+
+  else:
+    data_normalization = torch.load(file_path)
+
+  return data_normalization
 
