@@ -48,7 +48,7 @@ For the architecture, I went with a transformer because of its ease to deal with
 
   For simplicity reasons, I decided to predict expliclity only the mean of the noise, as (I think) we would need to optimize the variational lower bound too to predict the variance.
 
-  Instead, like Wuerstchen, we implictly predict it (and assume it's diagonal) by doing what I call the "learned noise gating trick" which is to predict the noise $\bar ϵ = \frac{x_t - A}{ |1-B| + 1e^{-5}}$ where $x_t =  \sqrt{\bar{\alpha}_t}x_{0} + \sqrt{1 - \bar{\alpha}_t}\epsilon_t)$, and $A,B = f_\theta(x_t,t)$, $A$ and $B$ have the same dimension as the noise $\epsilon$. The division is element-wise.
+  Instead, like Wuerstchen, we implictly predict it (and assume it's diagonal) by doing what I call the "learned noise gating trick" which is to predict the noise $\bar \epsilon = \frac{x_t - A}{ |1-B| + 1e^{-5}}$ where $x_t =  \sqrt{\bar\alpha_t}x_{0} + \sqrt{1 - \bar\alpha_t}\epsilon_t)$, and $A,B = f_\theta(x_t,t)$, $A$ and $B$ have the same dimension as the noise $\epsilon$. The division is element-wise.
   Possible reasons as to why this works well are similar to "adaLN-Zero" i.e. at init time, the model initially returns the input, making the loss small for very noised inputs.
 
 
