@@ -2,7 +2,7 @@
 
 - The goal of this repo was to get familiar with protein & diffusion model training.
 
-- My good friends at [Latent Labs](https://www.latentlabs.com/) have asked me to make the source code private, because candidates were copying this code and this was signficantly affecting their hiring pipeline.
+- Unfortunately, my good friends at an AI biology lab have asked me to make the source code private, because candidates were copying this code for a takehome and this was signficantly affecting their hiring pipeline.
 
 - If you're interested in this code or want to discuss diffusion, please shoot me an email at (my first name)_(my last_name)@hotmail.ch
 
